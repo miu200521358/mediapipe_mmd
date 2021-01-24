@@ -1,0 +1,32 @@
+{
+    // IntelliSense を使用して利用可能な属性を学べます。
+    // 既存の属性の説明をホバーして表示します。
+    // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "exec",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "stopOnEntry": false,
+            "program": "${workspaceRoot}/executor.py",
+            "args": [
+                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\expose_sample\\cat\\cat_30fps_2807-2907.mp4",
+                "--process", "mediapipe",
+                // 5: test, 10: debug, 20: info, 30: warning
+                "--verbose", "20",
+                // 0: readonly, 1: update
+                "--log-mode", "1",
+            ]
+        },
+        {
+            "name": "translate",
+            "type": "python",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "stopOnEntry": false,
+            "program": "${workspaceRoot}/translate.py",
+        },
+    ]
+}
