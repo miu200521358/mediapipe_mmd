@@ -12,8 +12,14 @@
             "stopOnEntry": false,
             "program": "${workspaceRoot}/executor.py",
             "args": [
-                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\expose_sample\\cat\\cat_30fps_2807-2907.mp4",
-                "--process", "mediapipe",
+                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\self1\\self1.mp4",
+                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\self2\\self2.mp4",
+                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\unknown\\unknown3358.mp4",
+                // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\self1\\self1_mp4_20210125_013528",
+                "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\unknown\\unknown3358_mp4_20210126_071211",
+                // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\init\\init_avi_20210125_065822",
+                // "--process", "mediapipe,motion",
+                "--process", "motion",
                 // 5: test, 10: debug, 20: info, 30: warning
                 "--verbose", "20",
                 // 0: readonly, 1: update

@@ -30,14 +30,14 @@ def execute(args):
             return False
 
         # 全人物分の順番別フォルダ
-        ordered_person_dir_pathes = sorted(glob.glob(os.path.join(args.img_dir, "ordered", "*")), key=sort_by_numeric)
+        frames_person_dir_pathes = sorted(glob.glob(os.path.join(args.img_dir, "frames", "*")), key=sort_by_numeric)
 
         frame_pattern = re.compile(r'^frame_(\d+)\.')
 
-        for oidx, ordered_person_dir_path in enumerate(ordered_person_dir_pathes):    
+        for oidx, frames_person_dir_path in enumerate(frames_person_dir_pathes):    
             logger.info("【No.{0}】関節スムージング開始", f"{oidx:03}", decoration=MLogger.DECORATION_LINE)
 
-            frame_json_pathes = sorted(glob.glob(os.path.join(ordered_person_dir_path, "frame_*.json")), key=sort_by_numeric)
+            frame_json_pathes = sorted(glob.glob(os.path.join(frames_person_dir_path, "frame_*.json")), key=sort_by_numeric)
 
             all_joints = {}
 
