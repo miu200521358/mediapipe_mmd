@@ -14,6 +14,7 @@ import shutil
 import itertools
 
 from mmd.utils.MLogger import MLogger
+from mmd.utils.MServiceUtils import sort_by_numeric
 
 logger = MLogger(__name__, level=1)
 
@@ -23,48 +24,30 @@ mp_pose = mp.solutions.pose
 
 def execute(args):
     try:
-        logger.info('人物指推定開始: %s', args.video_file, decoration=MLogger.DECORATION_BOX)
+        logger.info('人物指推定開始: {0}', args.img_dir, decoration=MLogger.DECORATION_BOX)
 
-        # 親パス(指定がなければ動画のある場所。Colabはローカルで作成するので指定あり想定)
-        base_path = str(pathlib.Path(args.video_file).parent) if not args.parent_dir else args.parent_dir
+        if not os.path.exists(args.img_dir):
+            logger.error("指定された処理用ディレクトリが存在しません。: {0}", args.img_dir, decoration=MLogger.DECORATION_BOX)
+            return False
 
-        if len(args.parent_dir) > 0:
-            process_img_dir = base_path
-        else:
-            process_img_dir = os.path.join(base_path, "{0}_{1:%Y%m%d_%H%M%S}".format(os.path.basename(args.video_file).replace('.', '_'), datetime.datetime.now()))
-
-        process_hand_path = os.path.join(process_img_dir, "detector.mp4")
-
-        # 既存は削除
-        if os.path.exists(process_img_dir):
-            shutil.rmtree(process_img_dir)
-
-        # フォルダ生成
-        os.makedirs(process_img_dir)
+        process_hand_path = os.path.join(args.img_dir, "detector.mp4")
+        process_img_pathes = sorted(glob.glob(os.path.join(args.img_dir, "frames", "**", "frame_*.png")), key=sort_by_numeric)
 
         hands = mp_hands.Hands(min_detection_confidence=0.5, min_tracking_confidence=0.5)
         pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5, upper_body_only=True)
-        cap = cv2.VideoCapture(args.video_file)
 
-        # 幅
-        W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        # 高さ
-        H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        # 総フレーム数
-        count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        # fps
-        fps = cap.get(cv2.CAP_PROP_FPS)
+        img = cv2.imread(process_img_pathes[0])
+        W = img.shape[1]
+        H = img.shape[0]
 
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        out = cv2.VideoWriter(process_hand_path, fourcc, fps, (W, H))
+        out = cv2.VideoWriter(process_hand_path, fourcc, 30, (W, H))
 
-        for n in tqdm(range(int(count))):
-            # 動画から1枚キャプチャして読み込む
-            flag, img = cap.read()  # Capture frame-by-frame
+        for iidx, process_img_path in enumerate(tqdm(process_img_pathes)):
+            fname = f'{iidx:012}'
+            params_json_path = os.path.join(os.path.dirname(process_img_path), f'{fname}_joints.json')
 
-            # 動画が終わっていたら終了
-            if flag == False:
-                break
+            img = cv2.imread(process_img_path)
 
             # Flip the image horizontally for a later selfie-view display, and convert
             # the BGR image to RGB.
@@ -78,12 +61,6 @@ def execute(args):
             # Draw the hand annotations on the image.
             image.flags.writeable = True
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-            fname = f'{n:012}'
-            fname_path = os.path.join(process_img_dir, 'frames')
-
-            # フォルダ生成
-            os.makedirs(fname_path, exist_ok=True)
 
             # json出力
             joint_dict = {}
@@ -131,7 +108,6 @@ def execute(args):
             # 頭の位置として、鼻のXYと腕開始のZ平均を保持
             joint_dict["joints"]['head'] = {'x': joint_dict['joints']['nose']['x'], 'y': joint_dict['joints']['nose']['y'], 'z': np.mean([joint_dict['joints']['left_arm']['z'], joint_dict['joints']['right_arm']['z']])}
 
-            params_json_path = os.path.join(fname_path, f'joints_{fname}.json')
             with open(params_json_path, 'w') as f:
                 json.dump(joint_dict, f, indent=4)
 
@@ -140,13 +116,12 @@ def execute(args):
 
         pose.close()
         hands.close()
-        cap.release()            
         out.release()
         cv2.destroyAllWindows()
 
-        logger.info('人物指推定終了: %s', process_img_dir, decoration=MLogger.DECORATION_BOX)
+        logger.info('人物指推定終了: {0}', args.img_dir, decoration=MLogger.DECORATION_BOX)
         
-        return True, process_img_dir
+        return True, args.img_dir
     except Exception as e:
         logger.critical("指推定で予期せぬエラーが発生しました。", e, decoration=MLogger.DECORATION_BOX)
         return False, None

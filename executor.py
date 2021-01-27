@@ -41,10 +41,15 @@ if __name__ == "__main__":
 
     logger.info("MMD自動トレース(指版)開始\n　処理対象映像ファイル: {0}\n　処理内容: {1}", args.video_file, args.process, decoration=MLogger.DECORATION_BOX)
 
+    if result and "prepare" in args.process:
+        # prepareによる指推定
+        import mmd.prepare
+        result, args.img_dir = mmd.prepare.execute(args)
+
     if result and "mediapipe" in args.process:
         # mediapipeによる指推定
         import mmd.mediapipe
-        result, args.img_dir = mmd.mediapipe.execute(args)
+        result = mmd.mediapipe.execute(args)
 
     if result and "smooth" in args.process:
         # 人物スムージング

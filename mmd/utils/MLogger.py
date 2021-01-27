@@ -58,7 +58,7 @@ class MLogger():
         self.default_level = level
 
         # ロガー
-        self.logger = logging.getLogger("expose_mmd").getChild(self.module_name)
+        self.logger = logging.getLogger("mediapipe_mmd").getChild(self.module_name)
 
         if not out_path:
             # クラス単位の出力パスがない場合、デフォルトパス

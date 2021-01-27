@@ -96,15 +96,6 @@ def execute(args):
                         # 画像の縦横を指定サイズに変形
                         img = img.resize((width, height), Image.ANTIALIAS)
                         
-                        # # floatに変換
-                        # img = img_as_float(img)
-
-                        # # コントラストを強調
-                        # img = exposure.equalize_hist(img)
-
-                        # # TV filter
-                        # img = restoration.denoise_tv_chambolle(img, weight=0.1)
-
                     except Exception as e:
                         # エラーするようなら無視
                         logger.error(e)
@@ -141,43 +132,6 @@ def execute(args):
 
                 # 該当フレーム番号の画像をコピー
                 shutil.copy(target_path, process_path)
-
-            # # フレーム補間用比率
-            # fps_interpolation = fps / 30
-
-            # k = 0
-            # now_frame = None
-
-            # # 最後の１つ手前（補間ができる状態）までループ
-            # for k in tqdm(range(round(count * (30 / fps)) - 1)):
-
-            #     # 補間した出力CNT
-            #     inter_cnt = k * fps_interpolation
-            #     # INDEXと比率（整数部と小数部）
-            #     inter_cnt_rate, inter_cnt_idx = math.modf(inter_cnt)
-            #     # logger.debug("フレーム補間: {0} -> {1}, idx: {2}, rate: {3}" % ( cnt, inter_cnt, inter_cnt_idx, inter_cnt_rate ))
-
-            #     # 前のフレーム
-            #     past_frame = cv2.imread(resize_img_path.format(int(inter_cnt_idx)))
-            #     # 今回のフレーム
-            #     now_frame = cv2.imread(resize_img_path.format(int(inter_cnt_idx + 1)))
-
-            #     # 混ぜ合わせる比率
-            #     past_rate = inter_cnt_rate
-            #     now_rate = 1 - inter_cnt_rate
-
-            #     # フレーム補間をして出力する
-            #     target_output_frame = cv2.addWeighted(past_frame, past_rate, now_frame, now_rate, 0)
-
-            #     # PNG出力
-            #     cv2.imwrite(process_img_path.format(k), target_output_frame)
-
-            #     # if k % 100 == 0:
-            #     #     logger.info(f"-- 補間生成中 {k}")
-
-            # # 最後にnowを出力
-            # last_k = k + 1
-            # cv2.imwrite(process_img_path.format(last_k), now_frame)
 
             # 終わったら開放
             cap.release()
