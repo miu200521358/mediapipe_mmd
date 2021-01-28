@@ -168,6 +168,155 @@ def execute(args):
                     now_bf.rotation = MQuaternion.fromEulerAngles(xv, yv, zv)
                     motion.regist_bf(now_bf, now_bf.name, now_bf.fno, is_key=now_bf.key)
 
+        # 手首までのリンク
+        right_wrist_links = model.create_link_2_top_one("右手首", is_defined=False)
+        left_wrist_links = model.create_link_2_top_one("左手首", is_defined=False)
+
+        right_ik_links = BoneLinks()
+        right_ik_links.append(model.bones['右手首'])
+        right_ik_links.append(model.bones['右ひじ'])
+        right_ik_links.append(model.bones['右腕'])
+        right_ik_links.append(model.bones['右肩'])
+
+        left_ik_links = BoneLinks()
+        left_ik_links.append(model.bones['左手首'])
+        left_ik_links.append(model.bones['左ひじ'])
+        left_ik_links.append(model.bones['左腕'])
+        left_ik_links.append(model.bones['左肩'])
+
+        logger.info("手首位置合わせ", decoration=MLogger.DECORATION_LINE)
+        with tqdm(total=(len(list(all_frame_joints.keys())) * 250)) as pchar:
+            for fidx, (fno, frame_joints) in enumerate(tqdm(all_frame_joints.items())):
+                # 画面内の位置
+                right_arm_pos = get_vec3(frame_joints["joints"], 'right_arm')
+                left_arm_pos = get_vec3(frame_joints["joints"], 'left_arm')
+                right_wrist_pos = get_vec3(frame_joints["joints"], 'right_wrist')
+                left_wrist_pos = get_vec3(frame_joints["joints"], 'left_wrist')
+
+                # モーションの肩の位置
+                now_right_wrist_3ds_dic = MServiceUtils.calc_global_pos(model, right_wrist_links, motion, fno)
+                now_left_wrist_3ds_dic = MServiceUtils.calc_global_pos(model, left_wrist_links, motion, fno)
+
+                # 腕の始点位置
+                now_right_arm_vec = now_right_wrist_3ds_dic['右腕']
+                now_left_arm_vec = now_left_wrist_3ds_dic['左腕']
+
+                # 手首の始点位置
+                now_right_wrist_vec = now_right_wrist_3ds_dic['右手首']
+                now_left_wrist_vec = now_left_wrist_3ds_dic['左手首']
+
+                for direction_ja, direction_en, effector_links, ik_links, now_arm_vec, now_wrist_vec, arm_pos, wrist_pos in [
+                        ('右', 'right', right_wrist_links, right_ik_links, now_right_arm_vec, now_right_wrist_vec, right_arm_pos, right_wrist_pos), 
+                        ('左', 'left', left_wrist_links, left_ik_links, now_left_arm_vec, now_left_wrist_vec, left_arm_pos, left_wrist_pos)]:
+                    
+                    # 中央0からの位置とする
+                    arm_pos.setX(arm_pos.x() - 0.5)
+                    wrist_pos.setX(wrist_pos.x() - 0.5)
+                    # 上0からの位置とする
+                    arm_pos.setY(arm_pos.y() * -1)
+                    wrist_pos.setY(wrist_pos.y() * -1)
+
+                    # 腕位置の比率
+                    arm_ratio = now_arm_vec / arm_pos
+                    wrist_ratio = now_wrist_vec / wrist_pos
+
+                    # MMD上の想定手首位置
+                    final_effector_pos = wrist_pos * (arm_ratio.x(), wrist_ratio.y(), wrist_ratio.z())
+                    effector_diff_pos = final_effector_pos - now_wrist_vec
+                    effector_diff_x = np.linspace(0, effector_diff_pos.x(), 5)
+                    effector_diff_y = np.linspace(0, effector_diff_pos.y(), 5)
+                    effector_diff_z = np.linspace(0, effector_diff_pos.z(), 5)
+                    logger.debug("fno: {0}, direction: {1}, final_effector_pos: {2}, now_wrist_vec: {3}, wrist_pos: {4}, now_arm_vec: {5}, arm_pos: {6}", \
+                                 fno, direction_ja, final_effector_pos.to_log(), now_wrist_vec.to_log(), wrist_pos.to_log(), now_arm_vec.to_log(), arm_pos.to_log())
+
+                    effector_bone_name = f'{direction_ja}手首'
+
+                    prev_diff = MVector3D()
+                    org_motion = motion.copy()
+
+                    org_bfs = {}
+                    for link_name in list(ik_links.all().keys())[1:]:
+                        # 元モーションの角度で保持
+                        bf = org_motion.calc_bf(link_name, fno).copy()
+                        org_bfs[link_name] = bf
+                        # 今のモーションも前のキーフレをクリアして再セット
+                        motion.regist_bf(bf, link_name, fno)
+
+                    # IK計算実行
+                    for didx, (diff_x, diff_y, diff_z) in enumerate(zip(effector_diff_x[1:], effector_diff_y[1:], effector_diff_z[1:])):
+                        target_effector_pos = now_wrist_vec + MVector3D(diff_x, diff_y, diff_z)
+
+                        ik_cnt = 0
+                        for ik_cnt in range(50):
+                            pchar.update(1)
+                            MServiceUtils.calc_IK(model, effector_links, motion, fno, target_effector_pos, ik_links, max_count=1)
+
+                            # どちらにせよ一旦bf確定
+                            for link_name in list(ik_links.all().keys())[1:]:
+                                ik_bf = motion.calc_bf(link_name, fno)
+                                motion.regist_bf(ik_bf, link_name, fno)
+
+                            # 現在のエフェクタ位置
+                            now_global_3ds = MServiceUtils.calc_global_pos(model, effector_links, motion, fno)
+                            now_effector_pos = now_global_3ds[effector_bone_name]
+
+                            # 現在のエフェクタ位置との差分(エフェクタ位置が指定されている場合のみ)
+                            diff_pos = MVector3D() if target_effector_pos == MVector3D() else target_effector_pos - now_effector_pos
+
+                            if prev_diff == MVector3D() or (prev_diff != MVector3D() and diff_pos.length() < prev_diff.length()):
+                                if diff_pos.length() < 0.02:
+                                    logger.debug("☆腕ＩＫ変換成功({0}-{1}): f: {2}({3}), 指定 [{4}], 現在[{5}], 差異[{6}({7})]", didx, ik_cnt, fno, effector_bone_name, \
+                                                target_effector_pos.to_log(), now_effector_pos.to_log(), diff_pos.to_log(), diff_pos.length())
+
+                                    # org_bfを保持し直し
+                                    for link_name in list(ik_links.all().keys())[1:]:
+                                        bf = motion.calc_bf(link_name, fno).copy()
+                                        org_bfs[link_name] = bf
+                                        logger.test("org_bf保持: {0} [{1}]", link_name, bf.rotation.toEulerAngles().to_log())
+
+                                    # そのまま終了
+                                    break
+                                elif (prev_diff == MVector3D() and diff_pos.length() < 0.1) or diff_pos.length() < prev_diff.length():
+                                    logger.debug("☆腕ＩＫ変換ちょっと失敗採用({0}-{1}): f: {2}({3}), 指定 [{4}], 現在[{5}], 差異[{6}({7})]", didx, ik_cnt, fno, effector_bone_name, \
+                                                target_effector_pos.to_log(), now_effector_pos.to_log(), diff_pos.to_log(), diff_pos.length())
+
+                                    # org_bfを保持し直し
+                                    for link_name in list(ik_links.all().keys())[1:]:
+                                        bf = motion.calc_bf(link_name, fno).copy()
+                                        org_bfs[link_name] = bf
+                                        logger.test("org_bf保持: {0} [{1}]", link_name, bf.rotation.toEulerAngles().to_log())
+
+                                    # 前回とまったく同じ場合か、充分に近い場合、IK的に動きがないので終了
+                                    if prev_diff == diff_pos or np.count_nonzero(np.where(np.abs(diff_pos.data()) > 0.05, 1, 0)) == 0:
+                                        logger.debug("動きがないので終了")
+                                        break
+
+                                    # 前回差異を保持
+                                    prev_diff = diff_pos
+                                else:
+                                    logger.debug("★腕ＩＫ変換ちょっと失敗不採用({0}-{1}): f: {2}({3}), 指定 [{4}], 現在[{5}], 差異[{6}({7})]", didx, ik_cnt, fno, effector_bone_name, \
+                                                target_effector_pos.to_log(), now_effector_pos.to_log(), diff_pos.to_log(), diff_pos.length())
+
+                                    # 前回とまったく同じ場合か、充分に近い場合、IK的に動きがないので終了
+                                    if prev_diff == diff_pos or np.count_nonzero(np.where(np.abs(diff_pos.data()) > 0.05, 1, 0)) == 0:
+                                        break
+                            else:
+                                logger.debug("★腕ＩＫ変換失敗({0}-{1}): f: {2}({3}), 指定 [{4}], 現在[{5}], 差異[{6}({7})]", didx, ik_cnt, fno, effector_bone_name, \
+                                            target_effector_pos.to_log(), now_effector_pos.to_log(), diff_pos.to_log(), diff_pos.length())
+
+                                # 前回とまったく同じ場合か、充分に近い場合、IK的に動きがないので終了
+                                if prev_diff == diff_pos or np.count_nonzero(np.where(np.abs(diff_pos.data()) > 0.05, 1, 0)) == 0:
+                                    logger.debug("動きがないので終了")
+                                    break
+                    
+                        pchar.update(50 - ik_cnt)
+
+                    # 最後に成功したところに戻す
+                    for link_name in list(ik_links.all().keys())[1:]:
+                        bf = org_bfs[link_name].copy()
+                        logger.debug("確定bf: %s [%s]", link_name, bf.rotation.toEulerAngles().to_log())
+                        motion.regist_bf(bf, link_name, fno)
+                    
         logger.info("モーション生成開始", decoration=MLogger.DECORATION_LINE)
         motion_path = os.path.join(motion_dir_path, "output_{0}.vmd".format(process_datetime))
         writer = VmdWriter(model, motion, motion_path)

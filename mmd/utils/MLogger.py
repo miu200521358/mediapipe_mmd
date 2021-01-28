@@ -283,7 +283,7 @@ class MLogger():
         # ファイル出力ありの場合、ログファイル名生成
         if not out_path:
             os.makedirs("log", exist_ok=True)
-            cls.default_out_path = "log/expose_mmd_{0}.log".format(outout_datetime)
+            cls.default_out_path = "log/mediapipe_mmd_{0}.log".format(outout_datetime)
         else:
             cls.default_out_path = out_path
         
