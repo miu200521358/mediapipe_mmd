@@ -12,19 +12,25 @@
             "stopOnEntry": false,
             "program": "${workspaceRoot}/executor.py",
             "args": [
-                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\self1\\self1.mp4",
-                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\self2\\self2.mp4",
+                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF_350-850.mp4",
+                "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF_350-850_mp4_20210723_203350",
+
+                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\02\\buster\\buster_30fps_1100-1300.mp4",
+                // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\02\\buster\\buster_30fps_1100-1300_mp4_20210723_191007",
+
                 // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\unknown\\unknown3358.mp4",
-                // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\self1\\self1_mp4_20210125_013528",
-                // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\unknown\\unknown3358_mp4_20210127_084229",
-                "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\unknown\\unknown_pickup",
+                // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\unknown\\unknown_pickup2",
                 // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\init\\init_avi_20210125_065822",
-                // "--process", "prepare,mediapipe",
+                // "--process", "prepare,pose,smooth,motion",
+                // "--process", "pose,smooth,motion",
                 // "--process", "mediapipe",
                 // "--process", "smooth",
                 "--process", "motion",
+                // "--process", "prepare,pose",
+                // "--process", "prepare",
+                // "--process", "pose,smooth,motion",
                 // 5: test, 10: debug, 20: info, 30: warning
-                "--verbose", "10",
+                "--verbose", "20",
                 // 0: readonly, 1: update
                 "--log-mode", "1",
             ]

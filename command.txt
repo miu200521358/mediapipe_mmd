@@ -1,10 +1,12 @@
-conda create -n mediapipe python=3.7
+conda create -n mediapipe2 python=3.8
 
-conda activate mediapipe
+conda activate mediapipe2
 
 pip install -r requirement.txt
 
+--------------------------
 
+executor.py --video-file E:\MMD\MikuMikuDance_v926x64\Work\201805_auto\01\burai\BF_350-850.mp4 --process prepare,popse,smooth,motion --verbose 20 --log-mode 1
 
 
 

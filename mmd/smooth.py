@@ -30,7 +30,7 @@ def execute(args):
 
         logger.info("関節スムージング開始", decoration=MLogger.DECORATION_LINE)
 
-        frame_json_pathes = sorted(glob.glob(os.path.join(args.img_dir, "frames", "**", "*.json")), key=sort_by_numeric)
+        frame_json_pathes = sorted(glob.glob(os.path.join(args.img_dir, "joints", "*.json")), key=sort_by_numeric)
 
         frame_pattern = re.compile(r'^(\d+)_joints\.')
 
@@ -57,9 +57,21 @@ def execute(args):
                     if (jname, 'z') not in all_joints:
                         all_joints[(jname, 'z')] = {}
                     
+                    if (jname, 'wx') not in all_joints:
+                        all_joints[(jname, 'wx')] = {}
+
+                    if (jname, 'wy') not in all_joints:
+                        all_joints[(jname, 'wy')] = {}
+
+                    if (jname, 'wz') not in all_joints:
+                        all_joints[(jname, 'wz')] = {}
+                    
                     all_joints[(jname, 'x')][fno] = joint["x"]
                     all_joints[(jname, 'y')][fno] = joint["y"]
                     all_joints[(jname, 'z')][fno] = joint["z"]
+                    all_joints[(jname, 'wx')][fno] = joint["wx"]
+                    all_joints[(jname, 'wy')][fno] = joint["wy"]
+                    all_joints[(jname, 'wz')][fno] = joint["wz"]
                 
         # スムージング
         for (jname, axis), joints in tqdm(all_joints.items(), desc=f"Filter ... "):
@@ -69,7 +81,6 @@ def execute(args):
 
         # 出力先ソート済みフォルダ
         smoothed_dir_path = os.path.join(args.img_dir, "smooth")
-
         os.makedirs(smoothed_dir_path, exist_ok=True)
 
         # 出力
@@ -88,6 +99,9 @@ def execute(args):
                     frame_joints["joints"][jname]["x"] = all_joints[(jname, 'x')][fno]
                     frame_joints["joints"][jname]["y"] = all_joints[(jname, 'y')][fno]
                     frame_joints["joints"][jname]["z"] = all_joints[(jname, 'z')][fno]
+                    frame_joints["joints"][jname]["wx"] = all_joints[(jname, 'wx')][fno]
+                    frame_joints["joints"][jname]["wy"] = all_joints[(jname, 'wy')][fno]
+                    frame_joints["joints"][jname]["wz"] = all_joints[(jname, 'wz')][fno]
 
                 smooth_json_path = os.path.join(smoothed_dir_path, f"smooth_{fno:012}.json")
                 

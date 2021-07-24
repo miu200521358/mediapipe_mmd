@@ -59,12 +59,6 @@ def execute(args):
         # フォルダ生成
         os.makedirs(process_img_dir)
         os.makedirs(os.path.join(process_img_dir, "resize"), exist_ok=True)
-        os.makedirs(os.path.join(process_img_dir, "frames"), exist_ok=True)
-
-        # リサイズpng出力先
-        resize_img_path = os.path.join(process_img_dir, "resize", "resize_{0:012}.png")
-        # 補間png出力先
-        process_img_path = os.path.join(process_img_dir, "frames", "{0:012}", "frame_{0:012}.png")
 
         # 縮尺
         scale = width / W
@@ -72,11 +66,21 @@ def execute(args):
         # 縮尺後の高さ
         height = int(H * scale)
 
+        if width % 2 != 0 or height % 2 != 0:
+            logger.error("入力動画のサイズが調整後に2で割り切れません。調整前({0}x{1}) -> 調整後({2}-{3})\n4の倍数で入力動画のサイズを調整してください。\n{0}", 
+                         W, H, width, height, args.video_file, decoration=MLogger.DECORATION_BOX)
+            return False, None
+
+        # リサイズpng出力先
+        resize_img_path = os.path.join(process_img_dir, "resize", "resize_{0:012}.png")
+        # 補間mp4出力先
+        process_output_path = os.path.join(process_img_dir, "input_30fps.mp4")
+
         try:
+            logger.info("元動画読み込み開始", decoration=MLogger.DECORATION_BOX)
+
             # 入力ファイル
             cap = cv2.VideoCapture(args.video_file)
-
-            logger.info("元動画読み込み開始", decoration=MLogger.DECORATION_BOX)
 
             for n in tqdm(range(int(count))):
                 # 動画から1枚キャプチャして読み込む
@@ -101,11 +105,13 @@ def execute(args):
                         logger.error(e)
 
                     # opencv用に変換
-                    # out_frame = img_as_ubyte(img)
-                    out_frame = np.array(img, dtype=np.uint8)
+                    out_frame = img_as_ubyte(img)
+                    # out_frame = np.array(img, dtype=np.uint8)
 
                     # PNG出力
                     cv2.imwrite(resize_img_path.format(n), out_frame)
+
+            cap.release()
 
             # 補間 --------------------------
 
@@ -114,10 +120,10 @@ def execute(args):
             # 元のフレームを30fpsで計算し直した場合の1Fごとの該当フレーム数
             interpolations = np.arange(0, count + 1, fps / 30)
 
-            for kidx, k in enumerate(tqdm(interpolations)):
-                # 30fps用にディレクトリ作成
-                os.makedirs(os.path.join(process_img_dir, "frames", f"{kidx:012}"), exist_ok=True)
+            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            out = cv2.VideoWriter(process_output_path, fourcc, 30, (width, height))
 
+            for kidx, k in enumerate(tqdm(interpolations)):
                 # コピー対象の画像パス
                 target_path = resize_img_path.format(round(k))
 
@@ -125,26 +131,22 @@ def execute(args):
                     # 最終フレームとかで対象パスがない場合、ひとつ手前
                     target_path = resize_img_path.format(round(k) - 1)
 
-                process_path = process_img_path.format(kidx)
-                if not os.path.exists(target_path):
-                    # 最終フレームとかで対象パスがない場合、ひとつ手前
-                    target_path = process_img_path.format(kidx - 1)
+                img = cv2.imread(target_path)
 
-                # 該当フレーム番号の画像をコピー
-                shutil.copy(target_path, process_path)
+                out.write(img)
 
             # 終わったら開放
-            cap.release()
+            out.release()
 
             logger.info("【再チェック】\n　準備フォルダ: {0}, 横: {1}, 縦: {2}, フレーム数: {3}, fps: {4}", process_img_dir, width, height, round(interpolations[-1]), 30)
         except Exception as e:
             logger.error("再エンコード失敗", e)
             return False, None
 
-        cv2.destroyAllWindows()
-
         # resizeは削除
         shutil.rmtree(os.path.join(process_img_dir, "resize"))
+
+        cv2.destroyAllWindows()
 
         logger.info("動画準備完了: {0}", process_img_dir, decoration=MLogger.DECORATION_BOX)
 

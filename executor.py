@@ -39,17 +39,22 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    logger.info("MMD自動トレース(指版)開始\n　処理対象映像ファイル: {0}\n　処理内容: {1}", args.video_file, args.process, decoration=MLogger.DECORATION_BOX)
+    logger.info("MMD自動トレース(mediapipe)開始\n　処理対象映像ファイル: {0}\n　処理内容: {1}", args.video_file, args.process, decoration=MLogger.DECORATION_BOX)
 
     if result and "prepare" in args.process:
         # prepareによる指推定
         import mmd.prepare
         result, args.img_dir = mmd.prepare.execute(args)
 
-    if result and "mediapipe" in args.process:
+    if result and "pose" in args.process:
         # mediapipeによる指推定
-        import mmd.mediapipe
-        result = mmd.mediapipe.execute(args)
+        import mmd.pose
+        result = mmd.pose.execute(args)
+
+    if result and "hand" in args.process:
+        # mediapipeによる指推定
+        import mmd.hand
+        result = mmd.hand.execute(args)
 
     if result and "smooth" in args.process:
         # 人物スムージング
@@ -63,7 +68,7 @@ if __name__ == "__main__":
 
     elapsed_time = time.time() - start
 
-    logger.info("MMD自動トレース(指版)終了\n　処理対象映像ファイル: {0}\n　処理内容: {1}\n　トレース結果: {2}\n　処理時間: {3}", \
+    logger.info("MMD自動トレース(mediapipe)終了\n　処理対象映像ファイル: {0}\n　処理内容: {1}\n　トレース結果: {2}\n　処理時間: {3}", \
                 args.video_file, args.process, args.img_dir, show_worked_time(elapsed_time), decoration=MLogger.DECORATION_BOX)
 
     # 終了音を鳴らす
