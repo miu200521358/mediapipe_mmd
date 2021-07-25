@@ -48,7 +48,7 @@ def execute(args):
         process_datetime = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
         smooth_pattern = re.compile(r'^smooth_(\d+)\.')
-        start_pelvis2 = np.array([9999999, 9999999, 9999999])
+        start_heel = np.array([9999999, 9999999, 9999999])
 
         pmx_writer = PmxWriter()
         vmd_writer = VmdWriter()
@@ -76,29 +76,31 @@ def execute(args):
                 if m:
                     # キーフレの場所を確定（間が空く場合もある）
                     fno = int(m.groups()[0])
-                    fnos.append(fno)
 
                     frame_joints = {}
                     with open(smooth_json_path, 'r', encoding='utf-8') as f:
                         frame_joints = json.load(f)
                     
-                    if np.all(start_pelvis2 == 9999999):
+                    if np.all(start_heel == 9999999):
                         # 最初のpelvis2を原点として登録する(奥行きのみ)
-                        start_pelvis2 = np.array([0, 0, frame_joints["joints"]['pelvis2']["wz"]]) * MIKU_METER
+                        z = frame_joints["joints"]['right_heel']["wz"] if frame_joints["joints"]['right_heel']["wy"] > frame_joints["joints"]['left_heel']["wy"] else frame_joints["joints"]['right_heel']["wz"]
+                        start_heel = np.array([0, 0, z]) * MIKU_METER
                         image_size = MVector3D(frame_joints["image"]["width"], frame_joints["image"]["height"], frame_joints["image"]["width"])
 
                     if "joints" in frame_joints:
                         for jname, joint in frame_joints["joints"].items():
                             if jname not in target_bone_global_vecs:
                                 target_bone_global_vecs[jname] = {}
-                            target_bone_global_vecs[jname][fno] = (np.array([joint["wx"], -joint["wy"], joint["wz"]]) * MIKU_METER) - start_pelvis2
-                            pchar.update(1)
-
-                        target_bone_global_vecs["全ての親"][fno] = np.array([0, 0, 0])
-                        target_bone_global_vecs["センター"][fno] = np.array([-(image_size.x() / 2 - (frame_joints["joints"]['pelvis2']["x"] * image_size.x())), -frame_joints["joints"]['pelvis2']["y"] * image_size.y(), frame_joints["joints"]['pelvis2']["z"] * image_size.z()]) - start_pelvis2
-                        pchar.update(1)
-                        target_bone_global_vecs["グルーブ"][fno] = np.array([0, 0, 0])
-                        pchar.update(1)
+                            target_bone_global_vecs[jname][fno] = (np.array([-joint["wx"], -joint["wy"], joint["wz"]]) * MIKU_METER) - start_heel
+                        
+                        if 'pelvis2' in frame_joints["joints"]:
+                            fnos.append(fno)
+                            target_bone_global_vecs["全ての親"][fno] = np.array([0, 0, 0])
+                            z = frame_joints["joints"]['right_heel']["wz"] if frame_joints["joints"]['right_heel']["wy"] > frame_joints["joints"]['left_heel']["wy"] else frame_joints["joints"]['right_heel']["wz"]
+                            target_bone_global_vecs["センター"][fno] = np.array([(image_size.x() / 2 - (frame_joints["joints"]['pelvis2']["x"] * image_size.x())), frame_joints["joints"]['pelvis2']["y"] * image_size.y(), z * MIKU_METER]) - start_heel
+                            target_bone_global_vecs["グルーブ"][fno] = np.array([0, 0, 0])
+                        else:
+                            pchar.update(len(PMX_CONNECTIONS.keys()))
 
             trace_model = PmxModel()
             trace_model.vertices["vertices"] = []
@@ -165,7 +167,7 @@ def execute(args):
                                 trace_bf.position.setZ(pos.z())
                             if mname == "グルーブ":
                                 trace_bf.position.setX(0)
-                                trace_bf.position.setY(pos.y() - trace_model.bones["グルーブ"].position.y())
+                                trace_bf.position.setY(pos.y() + trace_model.bones["グルーブ"].position.y())
                                 trace_bf.position.setZ(0)
                         trace_bf.key = True
                         trace_mov_motion.bones[mname][fno] = trace_bf
@@ -202,6 +204,7 @@ def execute(args):
                 ik_show.ik.append(VmdInfoIk(f'{direction}つま先ＩＫ', 0))
 
             trace_rot_motion.showiks.append(ik_show)
+            trace_miku_motion.showiks.append(ik_show)
 
             trace_model_path = os.path.join(motion_dir_path, f"trace_{process_datetime}_rot_model.pmx")
             logger.info("トレース(移動)モデル生成開始【{0}】", os.path.basename(trace_model_path), decoration=MLogger.DECORATION_LINE)
@@ -299,6 +302,7 @@ def execute(args):
                     target_local_x_qq = miku_target_local_x_qq.inverted() * trace_target_local_x_qq
 
                     miku_local_x_axis = miku_model.get_local_x_axis(mname)
+                    miku_local_y_axis = MVector3D.crossProduct(miku_local_x_axis, MVector3D(0, 0, 1))
 
                     for fno in fnos:
                         rot_bf = trace_rot_motion.calc_bf(mname, fno)
@@ -309,21 +313,38 @@ def execute(args):
 
                         miku_bf.position = rot_bf.position.copy()
                         new_miku_qq = rot_bf.rotation.copy()
-                        new_miku_qq = miku_parent_bf.rotation.inverted() * rot_parent_bf.rotation * new_miku_qq
-                        
+
+                        if (len(mname) > 2 and mname[2] == "指") or mname[1:] in ["ひじ", "ひざ"]:
+                            # ひじ・指・ひざは念のためX捩り除去
+                            _, _, _, now_yz_qq = MServiceUtils.separate_local_qq(fno, mname, new_miku_qq, miku_local_x_axis)
+                            new_miku_qq = now_yz_qq
+
+                        if mname[1:] not in ["肩", "足首"]:
+                            new_miku_qq = miku_parent_bf.rotation.inverted() * rot_parent_bf.rotation * new_miku_qq
+                                                
                         if mname[1:] in ["肩"] or mname in ["首"]:
                             new_miku_qq = parent_local_x_qq.inverted() * new_miku_qq
                         elif mname in ["頭"]:
                             new_miku_qq = parent_local_x_qq.inverted() * new_miku_qq * target_local_x_qq
+                        elif mname[1:] in ["腕"]:
+                            new_miku_qq = new_miku_qq * target_local_x_qq
                         elif mname[1:] in ["手首"]:
                             new_miku_qq = miku_parent_local_x_qq.inverted() * new_miku_qq * target_local_x_qq
                         else:
                             new_miku_qq = miku_parent_local_x_qq.inverted() * new_miku_qq * target_local_x_qq
 
-                        if "指" in PMX_CONNECTIONS[jname]['display'] or mname[1:] in ["ひじ", "ひざ"]:
-                            # ひじ・指・ひざは念のためX捩り除去
+                        if len(mname) > 2 and mname[2] == "指":
+                            # 指は正方向にしか曲がらない
+                            _, _, _, now_yz_qq = MServiceUtils.separate_local_qq(fno, mname, new_miku_qq, miku_local_x_axis)
+                            new_miku_qq = MQuaternion.fromAxisAndAngle(MVector3D(0, 0, -1), now_yz_qq.toDegree())
+                        elif mname[1:] in ["ひじ"]:
+                            # ひじは念のためX捩り除去
                             _, _, _, now_yz_qq = MServiceUtils.separate_local_qq(fno, mname, new_miku_qq, miku_local_x_axis)
                             new_miku_qq = now_yz_qq
+                        elif mname[1:] in ["ひざ"]:
+                            # ひざは足IK用にYのみ
+                            _, _, _, now_yz_qq = MServiceUtils.separate_local_qq(fno, mname, new_miku_qq, miku_local_x_axis)
+                            new_miku_qq = MQuaternion.fromAxisAndAngle(miku_local_y_axis, now_yz_qq.toDegree())
 
                         miku_bf.rotation = new_miku_qq
                         miku_bf.key = True

@@ -13,11 +13,17 @@
             "program": "${workspaceRoot}/executor.py",
             "args": [
                 // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF_350-850.mp4",
-                "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF_350-850_mp4_20210723_203350",
+                // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF_350-850_mp4_20210723_203350",
 
                 // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\02\\buster\\buster_30fps_1100-1300.mp4",
                 // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\02\\buster\\buster_30fps_1100-1300_mp4_20210723_191007",
 
+                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF.mp4",
+                // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF_mp4_20210724_160916",
+
+                // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF_350-850_2.mp4",
+                "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\201805_auto\\01\\burai\\BF_350-850_2_mp4_20210725_124828",
+                
                 // "--video-file", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\unknown\\unknown3358.mp4",
                 // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\unknown\\unknown_pickup2",
                 // "--img-dir", "E:\\MMD\\MikuMikuDance_v926x64\\Work\\202101_hand\\init\\init_avi_20210125_065822",

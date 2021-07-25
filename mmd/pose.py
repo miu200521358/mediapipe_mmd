@@ -84,6 +84,7 @@ def execute(args):
 
                 if pose_results.pose_landmarks and pose_results.pose_landmarks.landmark and pose_results.pose_world_landmarks and pose_results.pose_world_landmarks.landmark:
                     for landmark, world_landmark, output_name in zip(pose_results.pose_landmarks.landmark, pose_results.pose_world_landmarks.landmark, POSE_LANDMARKS):
+
                         joint_dict["joints"][output_name] = {'x': float(landmark.x), 'y': float(landmark.y), 'z': float(landmark.z), 
                                                             'wx': float(world_landmark.x), 'wy': float(world_landmark.y), 'wz': float(world_landmark.z)}
                     
@@ -166,40 +167,41 @@ UPPER_POSE_CONNECTIONS = frozenset([
     (PoseLandmark.RIGHT_HIP, PoseLandmark.LEFT_HIP),
 ])
 
+# 左右逆で出力
 POSE_LANDMARKS = [
     'nose',
-    'left_eye_inner',
-    'left_eye',
-    'left_eye_outer',
     'right_eye_inner',
     'right_eye',
     'right_eye_outer',
-    'left_ear',
+    'left_eye_inner',
+    'left_eye',
+    'left_eye_outer',
     'right_ear',
-    'mouth_left',
+    'left_ear',
     'mouth_right',
-    'left_shoulder',
+    'mouth_left',
     'right_shoulder',
-    'left_elbow',
+    'left_shoulder',
     'right_elbow',
-    'left_wrist',
+    'left_elbow',
     'right_wrist',
-    'left_pinky',
+    'left_wrist',
     'right_pinky',
-    'left_index',
+    'left_pinky',
     'right_index',
-    'left_thumb',
+    'left_index',
     'right_thumb',
-    'left_hip',
+    'left_thumb',
     'right_hip',
-    'left_knee',
+    'left_hip',
     'right_knee',
-    'left_ankle',
+    'left_knee',
     'right_ankle',
-    'left_heel',
+    'left_ankle',
     'right_heel',
-    'left_foot_index',
+    'left_heel',
     'right_foot_index',
+    'left_foot_index',
 ]
 
 HAND_LANDMARKS = [
