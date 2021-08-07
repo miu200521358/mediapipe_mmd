@@ -1,3 +1,4 @@
+cython
 pillow
 six
 scikit-image

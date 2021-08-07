@@ -1,8 +1,21 @@
-conda create -n mediapipe2 python=3.8
+conda create -n mediapipe python=3.8
 
-conda activate mediapipe2
+conda activate mediapipe
 
-pip install -r requirement.txt
+pip install -r requirements.txt
+
+
+cd lighttrack\lib
+
+python setup_windows.py build_ext --inplace
+※スキップされたらcファイルを削除
+
+python setup_cuda.py build_ext --inplace
+
+cd ..\graph\torchlight
+
+python setup.py install
+
 
 --------------------------
 

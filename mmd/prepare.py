@@ -44,8 +44,9 @@ def execute(args):
         logger.info("【初回チェック】\n　ファイル名: {0}, ファイルサイズ: {1}, 横: {2}, 縦: {3}, フレーム数: {4}, fps: {5}", \
                     args.video_file, os.path.getsize(args.video_file), W, H, count, fps, decoration=MLogger.DECORATION_BOX)
 
-        # 縮尺を調整(Colabは容量の問題でちょっと小さめ)
-        width = int(1280) if args.parent_dir else int(1920)
+        # # 縮尺を調整(Colabは容量の問題でちょっと小さめ)
+        # width = int(1280) if args.parent_dir else int(1920)
+        width = 1920
 
         if len(args.parent_dir) > 0:
             process_img_dir = base_path
@@ -76,72 +77,76 @@ def execute(args):
         # 補間mp4出力先
         process_output_path = os.path.join(process_img_dir, "input_30fps.mp4")
 
-        try:
-            logger.info("元動画読み込み開始", decoration=MLogger.DECORATION_BOX)
+        if W == width and H == height and fps == 30:
+            # 全部そのままの場合、ファイルコピーで終了
+            shutil.copy(args.video_file, process_output_path)
+        else:
+            try:
+                logger.info("元動画読み込み開始", decoration=MLogger.DECORATION_BOX)
 
-            # 入力ファイル
-            cap = cv2.VideoCapture(args.video_file)
+                # 入力ファイル
+                cap = cv2.VideoCapture(args.video_file)
 
-            for n in tqdm(range(int(count))):
-                # 動画から1枚キャプチャして読み込む
-                flag, img = cap.read()  # Capture frame-by-frame
+                for n in tqdm(range(int(count))):
+                    # 動画から1枚キャプチャして読み込む
+                    flag, img = cap.read()  # Capture frame-by-frame
 
-                # 動画が終わっていたら終了
-                if flag == False:
-                    break
-                
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
+                    # 動画が終わっていたら終了
+                    if flag == False:
+                        break
+                    
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
 
-                    try:
-                        # 画像に再変換
-                        img = Image.fromarray(img)
+                        try:
+                            # 画像に再変換
+                            img = Image.fromarray(img)
 
-                        # 画像の縦横を指定サイズに変形
-                        img = img.resize((width, height), Image.ANTIALIAS)
-                        
-                    except Exception as e:
-                        # エラーするようなら無視
-                        logger.error(e)
+                            # 画像の縦横を指定サイズに変形
+                            img = img.resize((width, height), Image.ANTIALIAS)
+                            
+                        except Exception as e:
+                            # エラーするようなら無視
+                            logger.error(e)
 
-                    # opencv用に変換
-                    out_frame = img_as_ubyte(img)
-                    # out_frame = np.array(img, dtype=np.uint8)
+                        # opencv用に変換
+                        out_frame = img_as_ubyte(img)
+                        # out_frame = np.array(img, dtype=np.uint8)
 
-                    # PNG出力
-                    cv2.imwrite(resize_img_path.format(n), out_frame)
+                        # PNG出力
+                        cv2.imwrite(resize_img_path.format(n), out_frame)
 
-            cap.release()
+                cap.release()
 
-            # 補間 --------------------------
+                # 補間 --------------------------
 
-            logger.info("補間生成開始", decoration=MLogger.DECORATION_BOX)
+                logger.info("補間生成開始", decoration=MLogger.DECORATION_BOX)
 
-            # 元のフレームを30fpsで計算し直した場合の1Fごとの該当フレーム数
-            interpolations = np.arange(0, count + 1, fps / 30)
+                # 元のフレームを30fpsで計算し直した場合の1Fごとの該当フレーム数
+                interpolations = np.arange(0, count + 1, fps / 30)
 
-            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-            out = cv2.VideoWriter(process_output_path, fourcc, 30, (width, height))
+                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+                out = cv2.VideoWriter(process_output_path, fourcc, 30, (width, height))
 
-            for kidx, k in enumerate(tqdm(interpolations)):
-                # コピー対象の画像パス
-                target_path = resize_img_path.format(round(k))
+                for kidx, k in enumerate(tqdm(interpolations)):
+                    # コピー対象の画像パス
+                    target_path = resize_img_path.format(round(k))
 
-                if not os.path.exists(target_path):
-                    # 最終フレームとかで対象パスがない場合、ひとつ手前
-                    target_path = resize_img_path.format(round(k) - 1)
+                    if not os.path.exists(target_path):
+                        # 最終フレームとかで対象パスがない場合、ひとつ手前
+                        target_path = resize_img_path.format(round(k) - 1)
 
-                img = cv2.imread(target_path)
+                    img = cv2.imread(target_path)
 
-                out.write(img)
+                    out.write(img)
 
-            # 終わったら開放
-            out.release()
+                # 終わったら開放
+                out.release()
 
-            logger.info("【再チェック】\n　準備フォルダ: {0}, 横: {1}, 縦: {2}, フレーム数: {3}, fps: {4}", process_img_dir, width, height, round(interpolations[-1]), 30)
-        except Exception as e:
-            logger.error("再エンコード失敗", e)
-            return False, None
+                logger.info("【再チェック】\n　準備フォルダ: {0}, 横: {1}, 縦: {2}, フレーム数: {3}, fps: {4}", process_img_dir, width, height, round(interpolations[-1]), 30)
+            except Exception as e:
+                logger.error("再エンコード失敗", e)
+                return False, None
 
         # resizeは削除
         shutil.rmtree(os.path.join(process_img_dir, "resize"))

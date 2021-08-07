@@ -88,18 +88,6 @@ def execute(args):
                         joint_dict["joints"][output_name] = {'x': float(landmark.x), 'y': float(landmark.y), 'z': float(landmark.z), 
                                                             'wx': float(world_landmark.x), 'wy': float(world_landmark.y), 'wz': float(world_landmark.z)}
                     
-                    joint_dict["joints"]['spine2'] = mean_joint(joint_dict, 'left_hip', 'right_hip', 'left_shoulder', 'right_shoulder')
-                    joint_dict["joints"]['spine3'] = mean_joint(joint_dict, 'left_shoulder', 'right_shoulder')
-                    joint_dict["joints"]['spine1'] = mean_joint(joint_dict, 'left_hip', 'right_hip', 'spine2')
-                    joint_dict["joints"]['pelvis'] = mean_joint(joint_dict, 'left_hip', 'right_hip', 'spine2')
-                    joint_dict["joints"]['pelvis2'] = mean_joint(joint_dict, 'left_hip', 'right_hip')
-                    joint_dict["joints"]['neck'] = mean_joint(joint_dict, 'mouth_left', 'mouth_right', 'nose')
-                    joint_dict["joints"]['head'] = mean_joint(joint_dict, 'left_eye', 'right_eye')
-                    joint_dict["joints"]['left_collar'] = mean_joint(joint_dict, 'left_shoulder', 'right_shoulder')
-                    joint_dict["joints"]['right_collar'] = mean_joint(joint_dict, 'left_shoulder', 'right_shoulder')
-                    joint_dict["joints"]['left_f_base'] = mean_joint(joint_dict, 'left_index', 'left_pinky')
-                    joint_dict["joints"]['right_f_base'] = mean_joint(joint_dict, 'right_index', 'right_pinky')
-
                     # 認識映像の出力
                     mp_drawing.draw_landmarks(image, pose_results.pose_landmarks, POSE_CONNECTIONS)
 
@@ -118,54 +106,8 @@ def execute(args):
         logger.critical("人物(身体)推定で予期せぬエラーが発生しました。", e, decoration=MLogger.DECORATION_BOX)
         return False, None
 
-def mean_joint(joint_dict: dict, *joint_names):
-    xs = []
-    ys = []
-    zs = []
-    wxs = []
-    wys = []
-    wzs = []
-
-    for joint_name in joint_names:
-        xs.append(joint_dict["joints"][joint_name]['x'])
-        ys.append(joint_dict["joints"][joint_name]['y'])
-        zs.append(joint_dict["joints"][joint_name]['z'])
-        wxs.append(joint_dict["joints"][joint_name]['wx'])
-        wys.append(joint_dict["joints"][joint_name]['wy'])
-        wzs.append(joint_dict["joints"][joint_name]['wz'])
-
-    return {'x': np.mean(xs, axis=0), 'y': np.mean(ys, axis=0), 'z': np.mean(zs, axis=0), 'wx': np.mean(wxs, axis=0), 'wy': np.mean(wys, axis=0), 'wz': np.mean(wzs, axis=0)}
-
 
 from mediapipe.python.solutions.pose import POSE_CONNECTIONS, PoseLandmark
-
-UPPER_POSE_CONNECTIONS = frozenset([
-    (PoseLandmark.NOSE, PoseLandmark.RIGHT_EYE_INNER),
-    (PoseLandmark.RIGHT_EYE_INNER, PoseLandmark.RIGHT_EYE),
-    (PoseLandmark.RIGHT_EYE, PoseLandmark.RIGHT_EYE_OUTER),
-    (PoseLandmark.RIGHT_EYE_OUTER, PoseLandmark.RIGHT_EAR),
-    (PoseLandmark.NOSE, PoseLandmark.LEFT_EYE_INNER),
-    (PoseLandmark.LEFT_EYE_INNER, PoseLandmark.LEFT_EYE),
-    (PoseLandmark.LEFT_EYE, PoseLandmark.LEFT_EYE_OUTER),
-    (PoseLandmark.LEFT_EYE_OUTER, PoseLandmark.LEFT_EAR),
-    (PoseLandmark.MOUTH_RIGHT, PoseLandmark.MOUTH_LEFT),
-    (PoseLandmark.RIGHT_SHOULDER, PoseLandmark.LEFT_SHOULDER),
-    (PoseLandmark.RIGHT_SHOULDER, PoseLandmark.RIGHT_ELBOW),
-    (PoseLandmark.RIGHT_ELBOW, PoseLandmark.RIGHT_WRIST),
-    (PoseLandmark.RIGHT_WRIST, PoseLandmark.RIGHT_PINKY),
-    (PoseLandmark.RIGHT_WRIST, PoseLandmark.RIGHT_INDEX),
-    (PoseLandmark.RIGHT_WRIST, PoseLandmark.RIGHT_THUMB),
-    (PoseLandmark.RIGHT_PINKY, PoseLandmark.RIGHT_INDEX),
-    (PoseLandmark.LEFT_SHOULDER, PoseLandmark.LEFT_ELBOW),
-    (PoseLandmark.LEFT_ELBOW, PoseLandmark.LEFT_WRIST),
-    (PoseLandmark.LEFT_WRIST, PoseLandmark.LEFT_PINKY),
-    (PoseLandmark.LEFT_WRIST, PoseLandmark.LEFT_INDEX),
-    (PoseLandmark.LEFT_WRIST, PoseLandmark.LEFT_THUMB),
-    (PoseLandmark.LEFT_PINKY, PoseLandmark.LEFT_INDEX),
-    (PoseLandmark.RIGHT_SHOULDER, PoseLandmark.RIGHT_HIP),
-    (PoseLandmark.LEFT_SHOULDER, PoseLandmark.LEFT_HIP),
-    (PoseLandmark.RIGHT_HIP, PoseLandmark.LEFT_HIP),
-])
 
 # 左右逆で出力
 POSE_LANDMARKS = [
@@ -203,29 +145,3 @@ POSE_LANDMARKS = [
     'right_foot_index',
     'left_foot_index',
 ]
-
-HAND_LANDMARKS = [
-    "wrist", 
-    'thumb1', 
-    'thumb2', 
-    'thumb3', 
-    'thumb4', 
-    'index1', 
-    'index2', 
-    'index3', 
-    'index4', 
-    'middle1', 
-    'middle2', 
-    'middle3', 
-    'middle4', 
-    'ring1', 
-    'ring2', 
-    'ring3', 
-    'ring4', 
-    'pinky1', 
-    'pinky2',
-    'pinky3',  
-    'pinky4', 
-]
-
-
