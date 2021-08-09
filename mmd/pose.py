@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 import os
-import glob
-import copy
 import json
 
 import numpy as np
 from tqdm import tqdm
 import cv2
-import pathlib
 import mediapipe as mp
-import datetime
 import shutil
-import itertools
 import mediapipe as mp
 
+from mmd.prepare import INPUT_VIDEO_NAME
 from mmd.utils.MLogger import MLogger
 
 logger = MLogger(__name__, level=1)
@@ -31,7 +27,7 @@ def execute(args):
             return False
 
         # 入力ファイル
-        process_input_path = os.path.join(args.img_dir, "input_30fps.mp4")
+        process_input_path = os.path.join(args.img_dir, INPUT_VIDEO_NAME)
         video = cv2.VideoCapture(process_input_path)
 
         # 既存は削除

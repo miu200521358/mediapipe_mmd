@@ -4,19 +4,6 @@ conda activate mediapipe
 
 pip install -r requirements.txt
 
-
-cd lighttrack\lib
-
-python setup_windows.py build_ext --inplace
-※スキップされたらcファイルを削除
-
-python setup_cuda.py build_ext --inplace
-
-cd ..\graph\torchlight
-
-python setup.py install
-
-
 --------------------------
 
 executor.py --video-file E:\MMD\MikuMikuDance_v926x64\Work\201805_auto\01\burai\BF_350-850.mp4 --process prepare,popse,smooth,motion --verbose 20 --log-mode 1

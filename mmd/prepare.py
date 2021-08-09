@@ -20,6 +20,9 @@ from mmd.utils.MLogger import MLogger
 
 logger = MLogger(__name__)
 
+INPUT_VIDEO_NAME = "input_30fps.mp4"
+
+
 def execute(args):
     try:
         logger.info("動画準備開始", decoration=MLogger.DECORATION_BOX)
@@ -75,7 +78,7 @@ def execute(args):
         # リサイズpng出力先
         resize_img_path = os.path.join(process_img_dir, "resize", "resize_{0:012}.png")
         # 補間mp4出力先
-        process_output_path = os.path.join(process_img_dir, "input_30fps.mp4")
+        process_output_path = os.path.join(process_img_dir, INPUT_VIDEO_NAME)
 
         if W == width and H == height and fps == 30:
             # 全部そのままの場合、ファイルコピーで終了

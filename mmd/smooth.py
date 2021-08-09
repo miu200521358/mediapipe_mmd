@@ -47,37 +47,40 @@ def execute(args):
                     frame_joints = json.load(f)
                 
                 # ジョイントグローバル座標を保持
-                for jname, joint in frame_joints["joints"].items():
-                    if (jname, 'x') not in all_joints:
-                        all_joints[(jname, 'x')] = {}
+                for group_name in ["joints", "left_hand_joints", "right_hand_joints"]:
+                    for jname, joint in frame_joints[group_name].items():
+                        if (group_name, jname, 'x') not in all_joints:
+                            all_joints[(group_name, jname, 'x')] = {}
 
-                    if (jname, 'y') not in all_joints:
-                        all_joints[(jname, 'y')] = {}
+                        if (group_name, jname, 'y') not in all_joints:
+                            all_joints[(group_name, jname, 'y')] = {}
 
-                    if (jname, 'z') not in all_joints:
-                        all_joints[(jname, 'z')] = {}
+                        if (group_name, jname, 'z') not in all_joints:
+                            all_joints[(group_name, jname, 'z')] = {}
+                        
+                        if (group_name, jname, 'wx') not in all_joints:
+                            all_joints[(group_name, jname, 'wx')] = {}
+
+                        if (group_name, jname, 'wy') not in all_joints:
+                            all_joints[(group_name, jname, 'wy')] = {}
+
+                        if (group_name, jname, 'wz') not in all_joints:
+                            all_joints[(group_name, jname, 'wz')] = {}
+                        
+                        all_joints[(group_name, jname, 'x')][fno] = joint["x"]
+                        all_joints[(group_name, jname, 'y')][fno] = joint["y"]
+                        all_joints[(group_name, jname, 'z')][fno] = joint["z"]
+
+                        if "wx" in joint and "wy" in joint and "wz" in joint:
+                            all_joints[(group_name, jname, 'wx')][fno] = joint["wx"]
+                            all_joints[(group_name, jname, 'wy')][fno] = joint["wy"]
+                            all_joints[(group_name, jname, 'wz')][fno] = joint["wz"]
                     
-                    if (jname, 'wx') not in all_joints:
-                        all_joints[(jname, 'wx')] = {}
-
-                    if (jname, 'wy') not in all_joints:
-                        all_joints[(jname, 'wy')] = {}
-
-                    if (jname, 'wz') not in all_joints:
-                        all_joints[(jname, 'wz')] = {}
-                    
-                    all_joints[(jname, 'x')][fno] = joint["x"]
-                    all_joints[(jname, 'y')][fno] = joint["y"]
-                    all_joints[(jname, 'z')][fno] = joint["z"]
-                    all_joints[(jname, 'wx')][fno] = joint["wx"]
-                    all_joints[(jname, 'wy')][fno] = joint["wy"]
-                    all_joints[(jname, 'wz')][fno] = joint["wz"]
-                
         # スムージング
-        for (jname, axis), joints in tqdm(all_joints.items(), desc=f"Filter ... "):
+        for (group_name, jname, axis), joints in tqdm(all_joints.items(), desc=f"Filter ... "):
             filter = OneEuroFilter(freq=30, mincutoff=1, beta=0.00000000001, dcutoff=1)
             for fno, joint in joints.items():
-                all_joints[(jname, axis)][fno] = filter(joint, fno)
+                all_joints[(group_name, jname, axis)][fno] = filter(joint, fno)
 
         # 出力先ソート済みフォルダ
         smoothed_dir_path = os.path.join(args.img_dir, "smooth")
@@ -95,13 +98,16 @@ def execute(args):
                     frame_joints = json.load(f)
                 
                 # ジョイントグローバル座標を保存
-                for jname, joint in frame_joints["joints"].items():
-                    frame_joints["joints"][jname]["x"] = all_joints[(jname, 'x')][fno]
-                    frame_joints["joints"][jname]["y"] = all_joints[(jname, 'y')][fno]
-                    frame_joints["joints"][jname]["z"] = all_joints[(jname, 'z')][fno]
-                    frame_joints["joints"][jname]["wx"] = all_joints[(jname, 'wx')][fno]
-                    frame_joints["joints"][jname]["wy"] = all_joints[(jname, 'wy')][fno]
-                    frame_joints["joints"][jname]["wz"] = all_joints[(jname, 'wz')][fno]
+                for group_name in ["joints", "left_hand_joints", "right_hand_joints"]:
+                    for jname, joint in frame_joints[group_name].items():
+                        frame_joints[group_name][jname]["x"] = all_joints[(group_name, jname, 'x')][fno]
+                        frame_joints[group_name][jname]["y"] = all_joints[(group_name, jname, 'y')][fno]
+                        frame_joints[group_name][jname]["z"] = all_joints[(group_name, jname, 'z')][fno]
+
+                        if "wx" in joint and "wy" in joint and "wz" in joint:
+                            frame_joints[group_name][jname]["wx"] = all_joints[(group_name, jname, 'wx')][fno]
+                            frame_joints[group_name][jname]["wy"] = all_joints[(group_name, jname, 'wy')][fno]
+                            frame_joints[group_name][jname]["wz"] = all_joints[(group_name, jname, 'wz')][fno]
 
                 smooth_json_path = os.path.join(smoothed_dir_path, f"smooth_{fno:012}.json")
                 

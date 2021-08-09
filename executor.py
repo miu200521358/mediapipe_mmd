@@ -42,17 +42,14 @@ if __name__ == "__main__":
     logger.info("MMD自動トレース(mediapipe)開始\n　処理対象映像ファイル: {0}\n　処理内容: {1}", args.video_file, args.process, decoration=MLogger.DECORATION_BOX)
 
     if result and "prepare" in args.process:
-        # prepareによる指推定
         import mmd.prepare
         result, args.img_dir = mmd.prepare.execute(args)
 
-    if result and "pose" in args.process:
-        # mediapipeによる指推定
-        import mmd.pose
-        result = mmd.pose.execute(args)
+    if result and "holistic" in args.process:
+        import mmd.holistic
+        result = mmd.holistic.execute(args)
 
     if result and "hand" in args.process:
-        # mediapipeによる指推定
         import mmd.hand
         result = mmd.hand.execute(args)
 
